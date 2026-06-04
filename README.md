@@ -1,8 +1,9 @@
 # CCBD Exam 2026 — Flight Delays Analysis <!-- omit in toc -->
 
-Exam project for **Cloud Computing and Big Data** (AA 2025-2026, Università di Catania). The deliverable is a **self-documenting local Jupyter notebook** that drives Google BigQuery, runs six predefined analytical queries on the 2015 US flight-delays dataset, and narrates the findings with inline visualizations. A **Data Studio dashboard** is provided as a separate deliverable.
+Example exam project for **Cloud Computing and Big Data** (AA 2025-2026, Università di Catania). The deliverable is a **self-documenting local Jupyter notebook** that drives Google BigQuery, runs six predefined analytical queries on the 2015 US flight-delays dataset, and narrates the findings with inline visualizations. A **Data Studio dashboard** is provided as a separate deliverable.
 
-> Setup and "how to run" live here. *What the analysis does and why* is explained inline in the notebook itself.
+> Setup and "how to run" live here. 
+> *What the analysis does and why* is explained inline in the notebook itself.
 
 This README mirrors the six project stages of [`ExamProjectBrief2026.md`](./ExamProjectBrief2026.md).
 
