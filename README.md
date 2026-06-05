@@ -28,8 +28,8 @@ You are not expected to touch the full project during the exam — only the stub
 - [2. Data Ingestion](#2-data-ingestion)
   - [Download](#download)
   - [Clean your data — drop October 2015 (in the local CSV, before upload)](#clean-your-data--drop-october-2015-in-the-local-csv-before-upload)
-  - [(Optional) Subsample for a faster upload](#optional-subsample-for-a-faster-upload)
-  - [Upload to Cloud Storage](#upload-to-cloud-storage)
+  - [(Optional) Subsample for faster upload and processing](#optional-subsample-for-faster-upload-and-processing)
+  - [Upload to Cloud Storage with `gcloud`](#upload-to-cloud-storage-with-gcloud)
   - [List the uploaded files (Cloud Shell)](#list-the-uploaded-files-cloud-shell)
   - [Local environment (venv, kernel \& how to run)](#local-environment-venv-kernel--how-to-run)
 - [3. Data Manipulation in BigQuery](#3-data-manipulation-in-bigquery)
@@ -62,7 +62,7 @@ The service-account key (`*.json`) is **never** stored in the repo.
 
 - Python 3.11+ and `pip`
 - A Google Cloud project with billing enabled (see step 1)
-- The `gcloud` CLI (authenticated) — or use **Cloud Shell**, where `gcloud` is preinstalled
+- The `gcloud` CLI on your PC (should be authenticated in advance) — or use **Cloud Shell**, where `gcloud` is preinstalled
 - A Kaggle account (to download the dataset)
 
 ## 1. Cloud Setup
@@ -71,13 +71,22 @@ The service-account key (`*.json`) is **never** stored in the repo.
 >
 > **Live at exam:** authenticate to GCP, then show the stub project and its bucket.
 
-**Local shell only — authenticate first.** Cloud Shell is already authenticated; on your own machine, log the CLI in *without* auto-launching a browser (you paste the verification code yourself). One login covers `gcloud`, `bq`, and `gsutil`:
+**Local shell only — authenticate first.** 
+<details closed>
+
+<summary></summary>
+
+While Cloud Shell is already authenticated to your GCP account, if you'd rather work from your own machine, log your CLI as follows in *without* auto-launching a browser (you paste the verification code yourself). 
 
 ```bash
 gcloud auth login --no-launch-browser   # prints a URL; open it, approve, paste the code back
 ```
 
-Create the project and the bucket either from **Cloud Shell** (commands below) or from the **web console** (Console → project picker → *New Project*; Console → *Cloud Storage* → *Buckets* → *Create*).
+One login covers `gcloud`, `bq`, and `gsutil`.
+
+</details>
+
+**Create the project and the bucket** either from **Cloud Shell** (commands below) or from the **web console** (Console → project picker → *New Project*; Console → *Cloud Storage* → *Buckets* → *Create*).
 
 - Project: `ccbd-20260603-gpappa`
 - Bucket: `gs://ccbd-20260603-gpappa-bucket`
@@ -92,7 +101,11 @@ gcloud storage buckets create gs://ccbd-20260603-gpappa-bucket \
   --location=europe-west8 --uniform-bucket-level-access
 ```
 
-**Billing must be active** on the project — BigQuery and Cloud Storage require it,
+**Billing must be active** on the project
+<details closed>
+<summary></summary>
+
+BigQuery and Cloud Storage require it,
 even though our usage stays within the free tier. Check it (and link an account) 
 from the Google Cloud web console, or from the shell, thus:
 
@@ -119,17 +132,27 @@ Now under *Account management*, you'll see the list of projects already linked t
 
 To (re)link the current project, its **Billing** page shows **Link a billing account** when it has none (do this if you have part of your quota left).
 
-> **Exam requirement:** share the GCP project with the instructors (IAM role
-> *Viewer*) **at least 3 days before** the exam.
-> (Console → IAM & Admin → IAM → *Grant Access* → instructor's email → role
-> *Viewer* → Save.)
+</details>
+
+**Exam requirement** 
+> Please share the GCP project with the instructors (IAM role *Viewer*) **at least 3 days before** the exam.
+> 
+> Do: Console → IAM & Admin → IAM → *Grant Access* → instructor's email → role
+> *Viewer* → Save.
+>
+> On sharing, see also [`ExamProjectBrief2026.md`](./ExamProjectBrief2026.md#1-cloud-setup).
 
 ### 1.1 Service account & key
 
 The notebook authenticates with a **service-account key (JSON)**, which makes it
-portable across machines. Create it from **Cloud Shell** (below) or from the
+portable across machines. Create it from the
 **web console** (IAM & Admin → *Service Accounts* → *Create*; then open the account
 → *Keys* → *Add key* → *Create new key* → *JSON*).
+
+*Alternative: get service account and key with the Cloud Shell*
+<details>
+
+<summary></summary>
 
 ```bash
 SA=ccbd-exam-2026-sa
@@ -152,7 +175,9 @@ gcloud iam service-accounts keys create ./ccbd-exam-2026-sa-key.json \
   --iam-account=$SA@$PROJECT.iam.gserviceaccount.com
 ```
 
-Point the application at the key via an environment variable (the notebook reads this variable, the path is never hardcoded in the notebook):
+</details>
+
+Once you have created the service account and downloaded the key for it and the project, point the application at the key file via an environment variable (the notebook reads this variable, the key file path is never hardcoded in the notebook):
 
 ```bash
 export GOOGLE_APPLICATION_CREDENTIALS="$PWD/ccbd-exam-2026-sa-key.json"
@@ -165,7 +190,7 @@ export GOOGLE_APPLICATION_CREDENTIALS="$PWD/ccbd-exam-2026-sa-key.json"
 - Roles granted to the service account are least-privilege and Storage write is scoped to the bucket — the account is **not** Owner.
 - Rotate or, even better, delete the key after the exam.
 
-If you were to host your copy on GitHub (not required!), this could be a minimal, security-conscious `.gitignore`:
+To avoid publishing keys, if you were to host your version of this directory on GitHub (not required!), this could be a minimal, security-conscious `.gitignore`:
 
 ```gitignore
 *.json
@@ -222,7 +247,11 @@ ls -lh data/        # flights.csv ~565 MB, airlines.csv, airports.csv
 October 2015 is removed **before upload**: that month stores the airport fields as
 numeric codes instead of IATA codes, which breaks the joins to `airports.csv`.
 Dropping those rows at the root keeps the BigQuery table clean, so no query needs a
-`MONTH != 10` filter.
+`MONTH != 10` filter. Details follow.
+
+<details closed>
+
+<summary></summary>
 
 Every data row starts with `YEAR,MONTH,…`, i.e. `2015,10,…` for October, so we drop
 lines that begin with `2015,10,`. The leading `^…,` anchor matters — a bare
@@ -246,7 +275,9 @@ flight rows).
 > differs, use the field-aware form instead:
 > `awk -F, 'NR==1 || $2 != 10' data/flights.csv > data/flights_clean.csv`.
 
-### (Optional) Subsample for a faster upload
+</details>
+
+### (Optional) Subsample for faster upload and processing
 <details closed>
 <summary></summary>
 
@@ -267,7 +298,7 @@ deliverable, upload the full file (querying it is free at this scale).
 
 </details>
 
-### Upload to Cloud Storage
+### Upload to Cloud Storage with `gcloud`
 
 > **Important — disable parallel composite upload first.** For large files `gcloud
 > storage cp` defaults to splitting the upload into parts and reassembling them as a
@@ -295,7 +326,11 @@ gcloud storage ls gs://ccbd-20260603-gpappa-bucket/
 
 Set this up once; every stage that runs the notebook reuses it. Two prongs together
 give an isolated, reproducible env **and** a notebook that runs end-to-end on a
-clean machine.
+clean machine. Details follow.
+
+<details open>
+
+<summary></summary>
 
 **a) Dedicated virtual environment registered as a Jupyter kernel** — so JupyterLab
 uses the isolated env, not the global Python:
@@ -330,6 +365,8 @@ jupyter lab
 
 Open the notebook, select the **CCBD** kernel, and run all cells. All queries run directly against
 BigQuery, on the full table (free at this scale).
+
+</details>
 
 ## 3. Data Manipulation in BigQuery
 
