@@ -28,7 +28,7 @@ During the exam, it is required of candidates to:
 The project work is structured into stages. The Google project you share with the instructors must be complete, with all stage artifacts and outcomes present and made available.
 
 During the exam, candidates should have the following already in place: 
-- a new, empty, "live" GCP project created
+- a new, empty live stub project created
 - the relevant data downloaded to their local machine and uploaded to GCS
 - query files (`.sql`) 
 - the local notebook (step 3) on their disk
@@ -49,7 +49,7 @@ Steps to be demonstrated live during the exam are the ones that run fast — ess
      > enter the instructor's email → Role: **Viewer** (Basic) → Save.
      >
      > Instructors' emails: `gmpappalardo@gmail.com`, `salvatore.nicotra1@unict.it`.
-   - Have the "live project" stub ready: you can use the same naming scheme, making the date that of the exam, e.g. `ccbd-20260623-gpappa`, `ccbd-20260623-gpappa-bucket`.
+   - Have the live stub project ready: you can use the same naming scheme, making the date that of the exam, e.g. `ccbd-20260623-gpappa`, `ccbd-20260623-gpappa-bucket`.
 
 </details>
 
@@ -92,12 +92,15 @@ Steps to be demonstrated live during the exam are the ones that run fast — ess
 <summary></summary>
 
    - Set up a Google Colab notebook connected to the Managed Service for Apache Spark
-   - Load the same dataset as in Steps 2 and 3, from your PC into a Spark DataFrame within your Colab notebook
-     - *(optional, alternatively or in addition)* read your data from Google Cloud Storage instead
-   - Execute the same queries as in Step 3, using your Colab/Spark notebook to perform each query in three different ways:
+   - Load the same dataset as in Steps 2 and 3, from local data stored on your PC into a Spark DataFrame within your Colab notebook, and
+     - (*optionally, alternatively or in addition*) read your data from Google Cloud Storage instead.
+  
+   - Execute the same queries as in Step 3, using your Colab/Spark notebook to perform each query in different ways:
      - with Spark SQL
      - with Spark operators
-   - *Optional:* perform the same analysis using Databricks and discuss methodological differences
+     - (*optionally*) using Databricks.
+  
+     You are then expected to discuss the methodological differences among the above options.
 
 </details>
 
@@ -144,7 +147,7 @@ Before the exam day you should have the following artifacts (detailed in [Main R
 
 > - **Full project**, must be complete and shared with the instructors three days in advance.
 >
-> - **_Live_ project stub**, must be ready, including: live project created, GCS bucket created in the latter, data downloaded to your disk and uploaded to GCS bucket, SQL queries stored on your disk, and both notebooks prepared — the local JupyterLab one and the remote Colab one.
+> - **Live stub project**, must be ready, including: stub project created, GCS bucket created in the latter, data downloaded to your disk and uploaded to GCS bucket, SQL queries stored on your disk, and both notebooks prepared — the local JupyterLab one and the remote Colab one.
 
 ## Evaluation
 

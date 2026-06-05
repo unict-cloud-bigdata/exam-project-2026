@@ -7,6 +7,16 @@ Example exam project for **Cloud Computing and Big Data** (AA 2025-2026, Univers
 
 This README mirrors the six project stages of [`ExamProjectBrief2026.md`](./ExamProjectBrief2026.md).
 
+The idea: your **full project** is complete and **shared with the instructors at least three days before the exam** (see [`ExamProjectBrief2026.md`](./ExamProjectBrief2026.md)). For the live demonstration **during the oral exam**, you keep a separate **live stub project** — pre-filled with only *part* of the full project's artifacts — on which you reproduce a few quick steps in front of the instructors.
+
+To support that demo, the callouts in this README are labelled:
+
+> **Pre-exam:** what to set up on the live stub *before* the exam.
+>
+> **Live at exam:** what you actually do on the live stub *during* the exam.
+
+You are not expected to touch the full project during the exam — only the stub.
+
 ## Contents <!-- omit in toc -->
 
 - [Pipeline](#pipeline)
@@ -17,7 +27,7 @@ This README mirrors the six project stages of [`ExamProjectBrief2026.md`](./Exam
     - [Security recommendations](#security-recommendations)
 - [2. Data Ingestion](#2-data-ingestion)
   - [Download](#download)
-  - [Clean — drop October 2015 (at the source)](#clean--drop-october-2015-at-the-source)
+  - [Clean your data — drop October 2015 (in the local CSV, before upload)](#clean-your-data--drop-october-2015-in-the-local-csv-before-upload)
   - [(Optional) Subsample for a faster upload](#optional-subsample-for-a-faster-upload)
   - [Upload to Cloud Storage](#upload-to-cloud-storage)
   - [List the uploaded files (Cloud Shell)](#list-the-uploaded-files-cloud-shell)
@@ -57,8 +67,9 @@ The service-account key (`*.json`) is **never** stored in the repo.
 
 ## 1. Cloud Setup
 
-> **Pre-exam.** Project and bucket must exist before exam day — creation is not
-> demonstrated live. At the exam, authenticate and show the bucket contents.
+> **Pre-exam:** the live stub project and its bucket already exist (you create them ahead of time — creation is *not* demonstrated live).
+>
+> **Live at exam:** authenticate to GCP, then show the stub project and its bucket.
 
 **Local shell only — authenticate first.** Cloud Shell is already authenticated; on your own machine, log the CLI in *without* auto-launching a browser (you paste the verification code yourself). One login covers `gcloud`, `bq`, and `gsutil`:
 
@@ -166,9 +177,9 @@ __pycache__/
 
 ## 2. Data Ingestion
 
-> **Pre-exam:** data download, clean, and upload to GCS must be done before the exam.
-> **Live at exam:** listing the uploaded files (`gcloud storage ls …`) and
-> walking through the cleaning rationale.
+> **Pre-exam:** download, clean, and upload the CSVs to the stub's GCS bucket.
+>
+> **Live at exam:** list the uploaded files (`gcloud storage ls …`) and walk through the cleaning rationale.
 
 Get the data onto your machine, clean it, upload it to the bucket, list it — and
 set up the local Python environment used from here on.
@@ -197,7 +208,7 @@ set up the local Python environment used from here on.
   kaggle datasets download -d usdot/flight-delays -p data/ --unzip
   ```
 
-The three CSVs must end up in `data/`. The Kaggle archive may unzip into the
+The three CSVs must end up in local directory `data/`. The Kaggle archive may unzip into the
 project root instead — if so, move them in:
 
 ```bash
@@ -206,7 +217,7 @@ mv flights.csv airlines.csv airports.csv data/
 ls -lh data/        # flights.csv ~565 MB, airlines.csv, airports.csv
 ```
 
-### Clean — drop October 2015 (at the source)
+### Clean your data — drop October 2015 (in the local CSV, before upload)
 
 October 2015 is removed **before upload**: that month stores the airport fields as
 numeric codes instead of IATA codes, which breaks the joins to `airports.csv`.
@@ -236,6 +247,8 @@ flight rows).
 > `awk -F, 'NR==1 || $2 != 10' data/flights.csv > data/flights_clean.csv`.
 
 ### (Optional) Subsample for a faster upload
+<details closed>
+<summary></summary>
 
 The full `flights_clean.csv` is ~520 MB, so the upload to Cloud Storage can be slow.
 For quick iteration, build a **random** subset and upload that instead — random, not
@@ -251,6 +264,8 @@ Averages and rates stay close to the full data; absolute counts scale down ~10x.
 Lower the fraction if it is still slow. In the **Upload** step below, use
 `data/flights_sample.csv` in place of `data/flights_clean.csv`. For the final
 deliverable, upload the full file (querying it is free at this scale).
+
+</details>
 
 ### Upload to Cloud Storage
 
@@ -318,8 +333,9 @@ BigQuery, on the full table (free at this scale).
 
 ## 3. Data Manipulation in BigQuery
 
-> **Pre-exam:** CSV tables already uploaded to a Google Cloud Storage (GCS) bucket in the _live_ project stub. 
-> **Live at exam:** run the six queries in the BigQuery UI and in the notebook; export results to GCS.
+> **Pre-exam:** the CSVs are already in the stub's GCS bucket; the `.sql` query files are on your disk.
+>
+> **Live at exam:** load the tables, run the six queries in the BigQuery UI and in the notebook, then export the results to GCS.
 
 - Load the three CSVs from Cloud Storage into tables in a BigQuery dataset (same region, `europe-west8`), via the **BigQuery web console** (as the brief requires) and/or `bq load`. 
 - The **six predefined queries** are then uploaded to the project in BigQuery.
@@ -330,6 +346,8 @@ BigQuery, on the full table (free at this scale).
   Note that the queries themselves — SQL, charts, and narrative — live in the notebook (`flight_delays.ipynb`), this README only outlines the stage.
 
 ### Run the queries from the shell with `bq` (optional)
+<details closed>
+<summary></summary>
 
 The six queries are saved as standalone files under `sql/`. Besides the notebook and the BigQuery UI, you can run them straight from the shell.
 
@@ -370,13 +388,21 @@ The `.sql` files reference tables as `flights_2015.<table>` using the default
 project, so run `gcloud config set project ccbd-20260603-gpappa` first (or add
 `--project_id=…`).
 
+</details>
+
 ## 4. Data Analysis with Spark
 
-**Deferred — not part of this repository yet.** Planned: a Google Colab notebook
-connected to the Managed Service for Apache Spark, re-running the same six queries
-with **Spark SQL** and **Spark operators**.
+> **Pre-exam:** have a stub copy of your full Colab notebook, connected to the Managed Service for Apache Spark and ready on Google Colab.
+>
+> **Live at exam:** load your data from your local PC or GCS into the stub Colab notebook, and perform a quick live re-run of your queries (Spark SQL and Spark operators).
+
+**Deferred — not part of this repository yet.**
 
 ## 5. Data Enrichment (ML)
+
+> **Pre-exam:** the ML cells are part of the shared notebook; the BigQuery ML model is trained and evaluated there.
+>
+> **Live at exam:** walk through the model and its metrics in the notebook; re-run the prediction if time allows (fast at this scale).
 
 Binary classification — predict **arrival delay > 15 min** (the DOT threshold) from
 features known before arrival. **BigQuery ML** (logistic regression / boosted trees)
@@ -385,6 +411,10 @@ now; **Spark MLlib** later. This runs inside the same notebook — the venv and
 setup is needed. Details in the notebook.
 
 ## 6. Data Visualization (Data Studio)
+
+> **Pre-exam:** build the dashboard over the BigQuery tables/views and confirm it loads.
+>
+> **Live at exam:** demo it interactively — filters, date controls, drill-downs — all backed by live BigQuery queries.
 
 A **Data Studio** dashboard over the BigQuery results (or the exported tables), as a
 separate deliverable that highlights the key relationships found in the analysis.
