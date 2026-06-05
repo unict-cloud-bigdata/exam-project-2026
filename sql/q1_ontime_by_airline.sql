@@ -31,15 +31,13 @@ FROM flights_2015.flights AS f
 JOIN flights_2015.airlines AS a ON f.AIRLINE = a.IATA_CODE
 WHERE f.CANCELLED = 0
 GROUP BY a.IATA_CODE, a.AIRLINE
-|> EXTEND ROUND(100*(delayed_no / delay_non_null_no),1) AS pct
+|> EXTEND ROUND(100*(delayed_no / delay_non_null_no),1) AS pct_delayed
 |> DROP delayed_no, delay_non_null_no, delay_null_no, flights_no
-|> ORDER BY pct DESC;
+|> ORDER BY pct_delayed DESC;
 
 -- Alternative standard SQL version without pipeline syntax, for comparison.
--- IF FALSE makes the rest dead code, but preserves syntax highlighting
-
-IF FALSE THEN
-
+-- WILL NOT RUN! — standard-SQL equivalent (no pipeline syntax), kept inert as a block comment.
+/*
 SELECT
   a.IATA_CODE AS airline_code,
   a.AIRLINE AS airline_name,
@@ -53,6 +51,5 @@ JOIN flights_2015.airlines AS a ON f.AIRLINE = a.IATA_CODE
 WHERE f.CANCELLED = 0
 GROUP BY airline_code, airline_name
 ORDER BY pct_delayed DESC;
-
-END IF;
+*/
 

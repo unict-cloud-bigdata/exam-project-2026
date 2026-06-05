@@ -71,7 +71,7 @@ The service-account key (`*.json`) is **never** stored in the repo.
 >
 > **Live at exam:** authenticate to GCP, then show the stub project and its bucket.
 
-**Local shell only — authenticate first.** 
+**Local shell only — authenticate first** (details follow).
 <details closed>
 
 <summary></summary>
@@ -101,7 +101,7 @@ gcloud storage buckets create gs://ccbd-20260603-gpappa-bucket \
   --location=europe-west8 --uniform-bucket-level-access
 ```
 
-**Billing must be active** on the project
+**Billing must be active** on the project (details follow).
 <details closed>
 <summary></summary>
 
@@ -145,11 +145,18 @@ To (re)link the current project, its **Billing** page shows **Link a billing acc
 ### 1.1 Service account & key
 
 The notebook authenticates with a **service-account key (JSON)**, which makes it
-portable across machines. Create it from the
-**web console** (IAM & Admin → *Service Accounts* → *Create*; then open the account
-→ *Keys* → *Add key* → *Create new key* → *JSON*).
+portable across machines. From the **web console** — you must be **Owner** or
+**Project IAM Admin** to grant the roles:
 
-*Alternative: get service account and key with the Cloud Shell*
+1. **Create the account:** IAM & Admin → *Service Accounts* → *Create*.
+2. **Grant its roles** (easy to miss — skip it and the notebook fails with
+   `bigquery.jobs.create` denied): on the **project**, *BigQuery Job User* +
+   *BigQuery Data Editor* + *BigQuery Read Session User*; on the **bucket**, *Storage Object Admin*. Do it in
+   IAM & Admin → IAM → *Grant access*, or in the *Service Accounts* creation wizard's
+   *Grant access* step.
+3. **Create the key:** open the account → *Keys* → *Add key* → *Create new key* → *JSON*.
+
+*Alternative: get service account and key with the Cloud Shell (details follow).*
 <details>
 
 <summary></summary>
@@ -166,6 +173,10 @@ gcloud projects add-iam-policy-binding $PROJECT \
 gcloud projects add-iam-policy-binding $PROJECT \
   --member="serviceAccount:$SA@$PROJECT.iam.gserviceaccount.com" \
   --role="roles/bigquery.dataEditor"
+# Fast result downloads via the BigQuery Storage Read API (used by to_dataframe / the %%bigquery magic):
+gcloud projects add-iam-policy-binding $PROJECT \
+  --member="serviceAccount:$SA@$PROJECT.iam.gserviceaccount.com" \
+  --role="roles/bigquery.readSessionUser"
 # Storage write scoped to the bucket only (not project-wide):
 gcloud storage buckets add-iam-policy-binding gs://ccbd-20260603-gpappa-bucket \
   --member="serviceAccount:$SA@$PROJECT.iam.gserviceaccount.com" \
@@ -176,6 +187,16 @@ gcloud iam service-accounts keys create ./ccbd-exam-2026-sa-key.json \
 ```
 
 </details>
+
+**Verify the roles landed** before opening the notebook (substitute your SA email):
+
+```bash
+SA=ccbd-exam-2026-sa@ccbd-20260603-gpappa.iam.gserviceaccount.com
+gcloud projects get-iam-policy ccbd-20260603-gpappa \
+  --flatten="bindings[].members" --filter="bindings.members:$SA" \
+  --format="table(bindings.role)"
+# expect: roles/bigquery.jobUser, roles/bigquery.dataEditor, roles/bigquery.readSessionUser
+```
 
 Once you have created the service account and downloaded the key for it and the project, point the application at the key file via an environment variable (the notebook reads this variable, the key file path is never hardcoded in the notebook):
 
@@ -338,19 +359,20 @@ uses the isolated env, not the global Python:
 ```bash
 python -m venv .venv
 source .venv/bin/activate            # Windows: .venv\Scripts\activate
-pip install ipykernel
+pip install ipykernel jupyterlab
 python -m ipykernel install --user --name ccbd --display-name "CCBD"
+jupyter kernelspec list              # verify: the "ccbd" kernel must appear in the list
 ```
 
 **b) Pinned bootstrap cell at the top of the notebook** so it is self-contained ("open → Run All"). The notebook uses the `%pip` magic — **not** `!pip`. `%pip` installs into the *kernel's* environment (i.e., `CCBD`); beware that `!pip` within the notebook may target a different interpreter and cause `ImportError`:
 
 ```bash
 %pip install -q \
-    pandas==X.Y matplotlib==X.Y plotly==X.Y \
-    google-cloud-bigquery==X.Y db-dtypes==X.Y
+    pandas==2.2.2 matplotlib==3.9.2 \
+    google-cloud-bigquery==3.25.0 db-dtypes==1.2.0 pyarrow==17.0.0
 ```
 
-Pin exact versions in the cell above (resolve once). Separately,
+These are the exact versions pinned for this project. Separately,
 `pip freeze > requirements.txt` snapshots the **full** resolved environment as a lock
 file — it lets you (or a grader) recreate the venv with `pip install -r requirements.txt`.
 The notebook itself does **not** read it; it self-installs via the `%pip` cell above.
@@ -383,7 +405,9 @@ BigQuery, on the full table (free at this scale).
   Note that the queries themselves — SQL, charts, and narrative — live in the notebook (`flight_delays.ipynb`), this README only outlines the stage.
 
 ### Run the queries from the shell with `bq` (optional)
+
 <details closed>
+
 <summary></summary>
 
 The six queries are saved as standalone files under `sql/`. Besides the notebook and the BigQuery UI, you can run them straight from the shell.
